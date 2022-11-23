@@ -1504,6 +1504,16 @@ const myUnion = z.discriminatedUnion("status", [
 myUnion.parse({ status: "success", data: "yippie ki yay" });
 ```
 
+Discriminated unions can also be nested for flexibility:
+
+```ts
+const A = z.object({ type: z.literal("a"), a: z.literal(1) });
+const B = z.object({ type: z.literal("b"), b: z.literal(2) });
+const C = z.object({ type: z.literal("c"), c: z.literal(3) });
+const AorB = z.discriminatedUnion("type", [A, B]);
+const schema = z.discriminatedUnion("type", [AorB, C]);
+```
+
 ## Records
 
 Record schemas are used to validate types such as `{ [k: string]: number }`.
