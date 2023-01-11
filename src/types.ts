@@ -2926,7 +2926,6 @@ export interface ZodDiscriminatedUnionDef<
   Options extends ZodDiscriminatedUnionOption<string>[] = ZodDiscriminatedUnionOption<string>[]
 > extends ZodTypeDef {
   discriminator: Discriminator;
-  parentDiscriminators: Set<string>;
   options: Options;
   optionsMap: Map<Primitive, ZodDiscriminatedUnionOption<Discriminator>>;
   typeName: ZodFirstPartyTypeKind.ZodDiscriminatedUnion;
@@ -2986,10 +2985,6 @@ export class ZodDiscriminatedUnion<
     return this._def.discriminator;
   }
 
-  get parentDiscriminators() {
-    return Array.from(this._def.parentDiscriminators);
-  }
-
   get options() {
     return this._def.options;
   }
@@ -2998,7 +2993,7 @@ export class ZodDiscriminatedUnion<
     return this._def.optionsMap;
   }
 
-  _addParentDiscriminator(discriminator: string) {
+  _enforceParentDiscriminator(discriminator: string) {
     const valueSet = new Set<Primitive>();
     for (const type of this._def.options) {
       if (type instanceof ZodObject) {
@@ -3011,7 +3006,7 @@ export class ZodDiscriminatedUnion<
         }
         discriminatorValues.map((el) => valueSet.add(el));
       } else if (type instanceof ZodDiscriminatedUnion) {
-        const values = type._addParentDiscriminator(discriminator);
+        const values = type._enforceParentDiscriminator(discriminator);
         if (values.length < 1) {
           throw new Error(
             `No value for key \`${discriminator}\` was found for DiscriminatedUnion with discriminator \`${type.discriminator}\``
@@ -3020,7 +3015,6 @@ export class ZodDiscriminatedUnion<
         values.map((el) => valueSet.add(el));
       }
     }
-    this._def.parentDiscriminators.add(discriminator);
     const valueArray = Array.from(valueSet);
     if (!valueArray.length) {
       throw new Error(
@@ -3072,7 +3066,7 @@ export class ZodDiscriminatedUnion<
 
     for (const type of options) {
       if (type instanceof ZodDiscriminatedUnion) {
-        const values = type._addParentDiscriminator(discriminator);
+        const values = type._enforceParentDiscriminator(discriminator);
         addUniqueDiscriminatorValues(values, type);
       } else {
         const discriminatorValues = getDiscriminator(type.shape[discriminator]);
@@ -3091,7 +3085,6 @@ export class ZodDiscriminatedUnion<
       discriminator,
       options,
       optionsMap,
-      parentDiscriminators: new Set(),
       ...processCreateParams(params),
     });
   }
